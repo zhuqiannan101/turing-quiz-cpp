@@ -82,6 +82,12 @@ h2.res{font-size:30px;text-align:center;margin-bottom:2px}
 .coingift .big{font-size:52px;line-height:1.2}
 .coingift .num{font-size:46px;font-weight:bold;color:#e65100}
 .coingift .say{font-size:18px;font-weight:bold;color:#6d4c00;margin-top:6px;line-height:1.7}
+.readbtn{border:2.5px solid #42A5F5;background:#E3F2FD;color:#1565C0;border-radius:999px;
+ padding:7px 18px;font-size:14.5px;font-weight:bold;cursor:pointer;font-family:inherit}
+.readbtn:active{transform:scale(.95)}
+.readbtn.reading{background:#42A5F5;color:#fff}
+.vbtn{background:linear-gradient(135deg,#3CB371,#26A69A)!important;box-shadow:0 4px 12px #3CB37155!important}
+.vhint{font-size:13px;color:#999;margin-top:6px}
 .sndbtn{position:fixed;top:14px;left:14px;z-index:99;width:44px;height:44px;border-radius:50%;border:none;
  background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer;font-size:19px}
 .confetti{position:fixed;top:-16px;z-index:98;border-radius:3px;animation:drop linear forwards}
@@ -133,25 +139,26 @@ h2.res{font-size:30px;text-align:center;margin-bottom:2px}
 </div>
 <div id="quiz" class="hidden">
  <div class="card">
-  <div class="topbar"><span class="plate" id="pPlate"></span><span class="idx" id="pIdx"></span></div>
+  <div class="topbar"><span class="plate" id="pPlate"></span><span class="idx" id="pIdx"></span><button class="readbtn" id="readBtn" onclick="readQ()">🔊 读题</button></div>
   <div class="stem" id="qStem"></div>
   <div class="codeblk hidden" id="qCode"><span class="win">main.cpp</span><pre id="qCodePre"></pre></div>
   <div class="opts" id="opts"></div>
   <div class="fb" id="fb"></div>
   <div class="acts" id="acts">
     <button class="btn ghost" onclick="showAns()">📖 看解析</button>
-    <button class="btn" onclick="next()">下一题 →</button>
+    <button class="btn" id="quizNextBtn" onclick="next()">下一题 →</button>
   </div>
  </div>
 </div>
 <div id="ans" class="hidden">
  <div class="card">
   <div class="topbar"><span class="plate" id="aPlate"></span><span class="idx" id="aIdx"></span></div>
-  <div class="review" id="aStem"></div>
-  <div class="codeblk hidden" id="aCode"><span class="win">main.cpp</span><pre id="aCodePre"></pre></div>
-  <div class="expbox"><div class="et">💡 解析</div><div class="ec" id="aExp"></div></div>
-  <div style="text-align:center"><span class="point" id="aPoint"></span></div>
-  <div style="text-align:center;margin-top:16px"><button class="btn" onclick="next()">下一题 →</button></div>
+  <div id="vidBox" style="margin-top:6px;display:none"></div>
+  <img class="aimg" id="aImg" alt="解析" style="display:none;margin-top:10px">
+  <div style="text-align:center" id="vidOpt"><button class="btn vbtn" id="vidBtn" onclick="playVid()">🎬 看这题的讲解视频</button>
+   <div class="vhint" style="margin-top:6px">老师录的专属讲解，看完再点下一题哦～</div></div>
+  <div style="text-align:center;margin-top:14px"><button class="btn" id="ansNextBtn" onclick="next()">下一题 →</button>
+   <div class="vhint" id="vidHint"></div></div>
  </div>
 </div>
 <div id="result" class="hidden">
@@ -171,8 +178,7 @@ h2.res{font-size:30px;text-align:center;margin-bottom:2px}
 </div>
 <button class="home-ic hidden" id="homeIc" onclick="goHome()">🏠</button>
 <script>
-const QUIZ=[{"i": 0, "plate": "运算与优先级", "color": "FF7043", "stem": "执行语句 cout &lt;&lt; (2+4)*4; 输出的结果是（）？", "code": "", "opts": ["14", "20", "24", "26"], "ans": 2, "exp": "先算括号内 2+4=6，再 6×4=24，因此输出 24。"}, {"i": 1, "plate": "运算与优先级", "color": "FF7043", "stem": "执行语句 cout &lt;&lt; 4+3*5; 输出的结果是（）？", "code": "", "opts": ["12", "19", "35", "2+3*5"], "ans": 1, "exp": "乘法优先级高于加法：先算 3×5=15，再 4+15=19。"}, {"i": 2, "plate": "运算与优先级", "color": "FF7043", "stem": "执行语句 cout &lt;&lt; 1+4*(3+3); 后程序的输出结果是（）？", "code": "", "opts": ["16", "18", "25", "30"], "ans": 2, "exp": "先算括号 (3+3)=6，再 4×6=24，最后 1+24=25。"}, {"i": 3, "plate": "取余运算", "color": "42A5F5", "stem": "执行下列代码后，在终端区会输出什么？（右侧为代码）", "code": "int a = 7;\na = a % 4;\ncout << a;", "opts": ["2", "3", "4", "7"], "ans": 1, "exp": "% 是取余运算符，7 % 4 = 3，因此输出 3。"}, {"i": 4, "plate": "取余运算", "color": "42A5F5", "stem": "对于 int 类型变量 a 和 b，哪一项可以表示 a 除以 b 的余数部分？", "code": "", "opts": ["a%b", "a|b", "a&amp;b", "a/b"], "ans": 0, "exp": "% 是取余（模）运算符，a%b 表示 a 除以 b 的余数；a/b 是商。"}, {"i": 5, "plate": "变量与命名", "color": "AB47BC", "stem": "下列哪个变量命名是合法的？", "code": "", "opts": ["$price", "_studentName", "2nd_value", "char"], "ans": 1, "exp": "变量名不能以数字开头、不能使用 $、不能是关键字；_studentName 以下划线开头，合法。$price（$ 不合法）、2nd_value（数字开头）、char（关键字）都错误。"}, {"i": 6, "plate": "变量与命名", "color": "AB47BC", "stem": "下列选项中，哪一个不能作为变量名？", "code": "", "opts": ["NUM123", "_123num", "num123", "123_num"], "ans": 3, "exp": "变量名不能以数字开头，但可以包含数字或下划线：NUM123、_123num、num123 均合法，123_num 错误。"}, {"i": 7, "plate": "关键字与数据类型", "color": "00ACC1", "stem": "下列哪一项是修饰整数型变量的关键字？", "code": "", "opts": ["int", "double", "for", "else"], "ans": 0, "exp": "int 是整数类型关键字；double 是浮点型；for 是循环语句；else 是条件语句。"}, {"i": 8, "plate": "关键字与数据类型", "color": "00ACC1", "stem": "下列关于 C++ 语言描述不正确的是（）？", "code": "", "opts": ["变量名可以下划线开头", "else 语句不能单独存在，必须有匹配的 if 语句", "变量不定义也能赋值使用", "数组的下标从 0 开始"], "ans": 2, "exp": "C++ 要求变量必须先定义后使用，C 说法错误。A、B、D 均正确。"}, {"i": 9, "plate": "关键字与数据类型", "color": "00ACC1", "stem": "下列关于 C++ 语言描述不正确的是（）？", "code": "", "opts": ["变量必须先定义后使用", "if 语句不能单独存在，必须有匹配的 else 语句", "变量可以不初始化", "for 循环可能会造成无限循环"], "ans": 1, "exp": "if 语句可以单独使用，不需要 else，B 说法错误。A 正确；C 变量可以不初始化（但值不确定）；D 的确可能死循环。"}, {"i": 10, "plate": "关键字与数据类型", "color": "00ACC1", "stem": "以下哪一项是 C++ 中的逻辑与运算符？", "code": "", "opts": ["&amp;&amp;", "||", "!", "or"], "ans": 0, "exp": "&amp;&amp; 是逻辑与；|| 是逻辑或；! 是逻辑非；or 不是 C++ 运算符。"}, {"i": 11, "plate": "for 循环", "color": "66BB6A", "stem": "运行以下程序，输出的结果是（）？（for(int i=1; i&lt;=5; i++){ if(i!=3) sum+=i; } 输出 sum）", "code": "int sum = 0;\nfor (int i=1; i<=5; i++)\n{\n    if(i!=3)\n    {\n        sum += i;\n    }\n}\ncout << sum;", "opts": ["3", "6", "12", "15"], "ans": 2, "exp": "循环 5 次：i=1→1，i=2→3，i=3 跳过，i=4→7，i=5→12。最终输出 12。"}, {"i": 12, "plate": "for 循环", "color": "66BB6A", "stem": "运行以下程序，输出的结果是（）？（for 中当 i 是 3 的倍数时累加到 sum）", "code": "", "opts": ["9", "18", "36", "55"], "ans": 1, "exp": "i=3、6、9 时被累加，3+6+9=18。输出语句在循环结束后，所以输出 18。"}, {"i": 13, "plate": "for 循环", "color": "66BB6A", "stem": "下列哪一项 for 循环的循环次数是 5 次？", "code": "", "opts": ["for(int i=5; i&gt;=1; i++)", "for(int i=5; i&gt;=1; i--)", "for(int i=1; i&lt;=5; i--)", "for(int i=0; i&lt;=5; i++)"], "ans": 1, "exp": "B：i 从 5 到 1 每次 −1，共执行 5 次。A 的 i++ 会越跑越远；C 的 i-- 越来越小不满足条件；D 是 6 次。"}, {"i": 14, "plate": "for 循环", "color": "66BB6A", "stem": "阅读以下程序，程序输出结果为？（for(int i=1; i&lt;=10; i+=3) sum += i）", "code": "", "opts": ["9", "18", "22", "55"], "ans": 2, "exp": "i 依次取 1、4、7、10，累加 1+4+7+10=22。"}, {"i": 15, "plate": "条件判断 if/else", "color": "EC407A", "stem": "阅读以下程序，输入 8 时，输出什么？", "code": "#include <iostream>\nusing namespace std;\nint main()\n{\n    int n;\n    cin >> n;\n    if (n > 5) {\n        cout << \"yes\";\n    }\n    else {\n        cout << \"no\";\n    }\n    return 0;\n}", "opts": ["yes", "no", "yesno", "无输出"], "ans": 0, "exp": "输入 8，8 &gt; 5 成立，执行 if 分支输出 yes。"}, {"i": 16, "plate": "数组", "color": "F59E0B", "stem": "阅读以下程序，程序输出结果为？", "code": "#include <iostream>\nusing namespace std;\nint main()\n{\n    int a[6] = {0, 1, 3, 5, 7, 9};\n    int x = a[1] + a[5];\n    cout << x << endl;\n    return 0;\n}", "opts": ["6", "7", "9", "10"], "ans": 3, "exp": "数组下标从 0 开始：a[1]=1，a[5]=9，相加 1+9=10。"}, {"i": 17, "plate": "字符与函数", "color": "8D6E63", "stem": "阅读以下程序，程序输出结果为？（char ch=&#x27;C&#x27;; int num=ch+3; cout &lt;&lt; char(num);）", "code": "", "opts": ["67", "70", "F", "f"], "ans": 2, "exp": "&#x27;C&#x27; 的 ASCII 是 67，加 3 得 70，对应字符 &#x27;F&#x27;。char(num) 把 70 转回字符输出 F。"}, {"i": 18, "plate": "字符与函数", "color": "8D6E63", "stem": "运行以下代码，输入 -7 后，程序的结果是（）？（cal 函数：x&gt;0 返回 x，否则返回 -x）", "code": "", "opts": ["x", "7", "-7", "无输出"], "ans": 1, "exp": "输入 −7，x&gt;0 不成立，返回 −x = 7。函数的作用是求绝对值，输出 7。"}];
-const SFX={"coin": "sfx/coin.mp3", "double": "sfx/double.mp3", "triple": "sfx/triple.mp3", "quadra": "sfx/quadra.mp3", "penta": "sfx/penta.mp3", "legendary": "sfx/legendary.mp3", "welcome": "sfx/welcome.mp3", "fail": "sfx/fail.mp3"};
+const QUIZ=[{"i": 0, "plate": "运算与优先级", "color": "FF7043", "stem": "执行语句 cout &lt;&lt; (2+4)*4; 输出的结果是（）？", "code": "", "opts": ["14", "20", "24", "26"], "ans": 2, "exp": "先算括号内 2+4=6，再 6×4=24，因此输出 24。", "read": "执行语句 cout << (2+4)*4; 输出的结果是（）？。选项：A 14，B 20，C 24，D 26", "vid": "vid/01.mp4"}, {"i": 1, "plate": "运算与优先级", "color": "FF7043", "stem": "执行语句 cout &lt;&lt; 4+3*5; 输出的结果是（）？", "code": "", "opts": ["12", "19", "35", "2+3*5"], "ans": 1, "exp": "乘法优先级高于加法：先算 3×5=15，再 4+15=19。", "read": "执行语句 cout << 4+3*5; 输出的结果是（）？。选项：A 12，B 19，C 35，D 2+3*5", "vid": "vid/02.mp4"}, {"i": 2, "plate": "运算与优先级", "color": "FF7043", "stem": "执行语句 cout &lt;&lt; 1+4*(3+3); 后程序的输出结果是（）？", "code": "", "opts": ["16", "18", "25", "30"], "ans": 2, "exp": "先算括号 (3+3)=6，再 4×6=24，最后 1+24=25。", "read": "执行语句 cout << 1+4*(3+3); 后程序的输出结果是（）？。选项：A 16，B 18，C 25，D 30", "vid": "vid/03.mp4"}, {"i": 3, "plate": "取余运算", "color": "42A5F5", "stem": "执行下列代码后，在终端区会输出什么？（右侧为代码）", "code": "int a = 7;\na = a % 4;\ncout << a;", "opts": ["2", "3", "4", "7"], "ans": 1, "exp": "% 是取余运算符，7 % 4 = 3，因此输出 3。", "read": "执行下列代码后，在终端区会输出什么？（右侧为代码），程序如图。选项：A 2，B 3，C 4，D 7", "vid": "vid/04.mp4"}, {"i": 4, "plate": "取余运算", "color": "42A5F5", "stem": "对于 int 类型变量 a 和 b，哪一项可以表示 a 除以 b 的余数部分？", "code": "", "opts": ["a%b", "a|b", "a&amp;b", "a/b"], "ans": 0, "exp": "% 是取余（模）运算符，a%b 表示 a 除以 b 的余数；a/b 是商。", "read": "对于 int 类型变量 a 和 b，哪一项可以表示 a 除以 b 的余数部分？。选项：A a%b，B a|b，C a&amp;b，D a/b", "vid": "vid/05.mp4"}, {"i": 5, "plate": "变量与命名", "color": "AB47BC", "stem": "下列哪个变量命名是合法的？", "code": "", "opts": ["$price", "_studentName", "2nd_value", "char"], "ans": 1, "exp": "变量名不能以数字开头、不能使用 $、不能是关键字；_studentName 以下划线开头，合法。$price（$ 不合法）、2nd_value（数字开头）、char（关键字）都错误。", "read": "下列哪个变量命名是合法的？。选项：A $price，B _studentName，C 2nd_value，D char", "vid": "vid/06.mp4"}, {"i": 6, "plate": "变量与命名", "color": "AB47BC", "stem": "下列选项中，哪一个不能作为变量名？", "code": "", "opts": ["NUM123", "_123num", "num123", "123_num"], "ans": 3, "exp": "变量名不能以数字开头，但可以包含数字或下划线：NUM123、_123num、num123 均合法，123_num 错误。", "read": "下列选项中，哪一个不能作为变量名？。选项：A NUM123，B _123num，C num123，D 123_num", "vid": "vid/07.mp4"}, {"i": 7, "plate": "关键字与数据类型", "color": "00ACC1", "stem": "下列哪一项是修饰整数型变量的关键字？", "code": "", "opts": ["int", "double", "for", "else"], "ans": 0, "exp": "int 是整数类型关键字；double 是浮点型；for 是循环语句；else 是条件语句。", "read": "下列哪一项是修饰整数型变量的关键字？。选项：A int，B double，C for，D else", "vid": "vid/08.mp4"}, {"i": 8, "plate": "关键字与数据类型", "color": "00ACC1", "stem": "下列关于 C++ 语言描述不正确的是（）？", "code": "", "opts": ["变量名可以下划线开头", "else 语句不能单独存在，必须有匹配的 if 语句", "变量不定义也能赋值使用", "数组的下标从 0 开始"], "ans": 2, "exp": "C++ 要求变量必须先定义后使用，C 说法错误。A、B、D 均正确。", "read": "下列关于 C++ 语言描述不正确的是（）？。选项：A 变量名可以下划线开头，B else 语句不能单独存在，必须有匹配的 if 语句，C 变量不定义也能赋值使用，D 数组的下标从 0 开始", "vid": "vid/10.mp4"}, {"i": 9, "plate": "关键字与数据类型", "color": "00ACC1", "stem": "下列关于 C++ 语言描述不正确的是（）？", "code": "", "opts": ["变量必须先定义后使用", "if 语句不能单独存在，必须有匹配的 else 语句", "变量可以不初始化", "for 循环可能会造成无限循环"], "ans": 1, "exp": "if 语句可以单独使用，不需要 else，B 说法错误。A 正确；C 变量可以不初始化（但值不确定）；D 的确可能死循环。", "read": "下列关于 C++ 语言描述不正确的是（）？。选项：A 变量必须先定义后使用，B if 语句不能单独存在，必须有匹配的 else 语句，C 变量可以不初始化，D for 循环可能会造成无限循环", "vid": "vid/11.mp4"}, {"i": 10, "plate": "关键字与数据类型", "color": "00ACC1", "stem": "以下哪一项是 C++ 中的逻辑与运算符？", "code": "", "opts": ["&amp;&amp;", "||", "!", "or"], "ans": 0, "exp": "&amp;&amp; 是逻辑与；|| 是逻辑或；! 是逻辑非；or 不是 C++ 运算符。", "read": "以下哪一项是 C++ 中的逻辑与运算符？。选项：A &amp;&amp;，B ||，C !，D or", "vid": "vid/12.mp4"}, {"i": 11, "plate": "for 循环", "color": "66BB6A", "stem": "运行以下程序，输出的结果是（）？（for(int i=1; i&lt;=5; i++){ if(i!=3) sum+=i; } 输出 sum）", "code": "int sum = 0;\nfor (int i=1; i<=5; i++)\n{\n    if(i!=3)\n    {\n        sum += i;\n    }\n}\ncout << sum;", "opts": ["3", "6", "12", "15"], "ans": 2, "exp": "循环 5 次：i=1→1，i=2→3，i=3 跳过，i=4→7，i=5→12。最终输出 12。", "read": "运行以下程序，输出的结果是（）？（for(int i=1; i<=5; i++){ if(i!=3) sum+=i; } 输出 sum），程序如图。选项：A 3，B 6，C 12，D 15", "vid": "vid/13.mp4"}, {"i": 12, "plate": "for 循环", "color": "66BB6A", "stem": "运行以下程序，输出的结果是（）？（for 中当 i 是 3 的倍数时累加到 sum）", "code": "", "opts": ["9", "18", "36", "55"], "ans": 1, "exp": "i=3、6、9 时被累加，3+6+9=18。输出语句在循环结束后，所以输出 18。", "read": "运行以下程序，输出的结果是（）？（for 中当 i 是 3 的倍数时累加到 sum）。选项：A 9，B 18，C 36，D 55", "vid": "vid/14.mp4"}, {"i": 13, "plate": "for 循环", "color": "66BB6A", "stem": "下列哪一项 for 循环的循环次数是 5 次？", "code": "", "opts": ["for(int i=5; i&gt;=1; i++)", "for(int i=5; i&gt;=1; i--)", "for(int i=1; i&lt;=5; i--)", "for(int i=0; i&lt;=5; i++)"], "ans": 1, "exp": "B：i 从 5 到 1 每次 −1，共执行 5 次。A 的 i++ 会越跑越远；C 的 i-- 越来越小不满足条件；D 是 6 次。", "read": "下列哪一项 for 循环的循环次数是 5 次？。选项：A for(int i=5; i&gt;=1; i++)，B for(int i=5; i&gt;=1; i--)，C for(int i=1; i&lt;=5; i--)，D for(int i=0; i&lt;=5; i++)", "vid": "vid/15.mp4"}, {"i": 14, "plate": "for 循环", "color": "66BB6A", "stem": "阅读以下程序，程序输出结果为？（for(int i=1; i&lt;=10; i+=3) sum += i）", "code": "", "opts": ["9", "18", "22", "55"], "ans": 2, "exp": "i 依次取 1、4、7、10，累加 1+4+7+10=22。", "read": "阅读以下程序，程序输出结果为？（for(int i=1; i<=10; i+=3) sum += i）。选项：A 9，B 18，C 22，D 55", "vid": "vid/16.mp4"}, {"i": 15, "plate": "条件判断 if/else", "color": "EC407A", "stem": "阅读以下程序，输入 8 时，输出什么？", "code": "#include <iostream>\nusing namespace std;\nint main()\n{\n    int n;\n    cin >> n;\n    if (n > 5) {\n        cout << \"yes\";\n    }\n    else {\n        cout << \"no\";\n    }\n    return 0;\n}", "opts": ["yes", "no", "yesno", "无输出"], "ans": 0, "exp": "输入 8，8 &gt; 5 成立，执行 if 分支输出 yes。", "read": "阅读以下程序，输入 8 时，输出什么？，程序如图。选项：A yes，B no，C yesno，D 无输出", "vid": "vid/17.mp4"}, {"i": 16, "plate": "数组", "color": "F59E0B", "stem": "阅读以下程序，程序输出结果为？", "code": "#include <iostream>\nusing namespace std;\nint main()\n{\n    int a[6] = {0, 1, 3, 5, 7, 9};\n    int x = a[1] + a[5];\n    cout << x << endl;\n    return 0;\n}", "opts": ["6", "7", "9", "10"], "ans": 3, "exp": "数组下标从 0 开始：a[1]=1，a[5]=9，相加 1+9=10。", "read": "阅读以下程序，程序输出结果为？，程序如图。选项：A 6，B 7，C 9，D 10", "vid": "vid/18.mp4"}, {"i": 17, "plate": "字符与函数", "color": "8D6E63", "stem": "阅读以下程序，程序输出结果为？（char ch=&#x27;C&#x27;; int num=ch+3; cout &lt;&lt; char(num);）", "code": "", "opts": ["67", "70", "F", "f"], "ans": 2, "exp": "&#x27;C&#x27; 的 ASCII 是 67，加 3 得 70，对应字符 &#x27;F&#x27;。char(num) 把 70 转回字符输出 F。", "read": "阅读以下程序，程序输出结果为？（char ch='C'; int num=ch+3; cout << char(num);）。选项：A 67，B 70，C F，D f", "vid": "vid/19.mp4"}, {"i": 18, "plate": "字符与函数", "color": "8D6E63", "stem": "运行以下代码，输入 -7 后，程序的结果是（）？（cal 函数：x&gt;0 返回 x，否则返回 -x）", "code": "", "opts": ["x", "7", "-7", "无输出"], "ans": 1, "exp": "输入 −7，x&gt;0 不成立，返回 −x = 7。函数的作用是求绝对值，输出 7。", "read": "运行以下代码，输入 -7 后，程序的结果是（）？（cal 函数：x>0 返回 x，否则返回 -x）。选项：A x，B 7，C -7，D 无输出", "vid": "vid/20.mp4"}];
 const KEY="quiz_cpp_v1";
 const GROUP="【图灵杯C++组刷题】";
 const PRAISE=["太棒啦！🌟","真聪明！🧠","哇，答对啦！🎉","厉害厉害！👍","稳稳拿下！💪"];
@@ -186,7 +192,7 @@ function shuffled(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floo
 function start(mode){
  if(mode==="wrong"){order=shuffled([...wrong]).slice(0,15);if(!order.length){alert("错题本是空的，太棒了！🎉");return}}
  else order=shuffled([...QUIZ.keys()]).slice(0,15);
- cur=0;ansMap={};coins=0;combo=0;document.getElementById("coinN").textContent="0";
+ cur=0;ansMap={};coins=0;combo=0;videoDone=new Set();document.getElementById("coinN").textContent="0";
  show(["quiz"]);render();
 }
 function show(ids){for(const id of["home","quiz","ans","result"])document.getElementById(id).classList.toggle("hidden",!ids.includes(id));
@@ -217,6 +223,9 @@ function render(){
   fb.innerHTML=ok?`${PRAISE[Math.floor(Math.random()*PRAISE.length)]}${combo>=3?`<span class="combo">🔥 连对 ${combo} 题！</span>`:""}<span style="float:right">答对 +3 金币</span>`
    :`${CHEER[Math.floor(Math.random()*CHEER.length)]}<span style="float:right">正确答案：${"ABCD"[q.ans]}</span>`;
   document.getElementById("acts").style.display="flex";
+   const qnb=document.getElementById("quizNextBtn");
+   if(qnb){if(ansMap[cur]!==q.ans&&q.vid){qnb.textContent="看讲解进入下一题";qnb.style.background="linear-gradient(135deg,#3CB371,#26A69A)"}
+     else{qnb.textContent="下一题 →";qnb.style.background=""}}
  }else{fb.className="fb";document.getElementById("acts").style.display="none"}
 }
 function pick(li){
@@ -232,19 +241,50 @@ function pick(li){
 }
 function showAns(){
  const q=QUIZ[order[cur]];
- const pEl=document.getElementById("aPlate");
- pEl.textContent=q.plate;pEl.style.background="#"+q.color;
- document.getElementById("aIdx").textContent=`第 ${cur+1} / ${order.length} 题`;
- document.getElementById("aStem").innerHTML="题目回顾："+q.stem;
- const ac=document.getElementById("aCode");
- if(q.code){ac.classList.remove("hidden");document.getElementById("aCodePre").textContent=q.code}
- else ac.classList.add("hidden");
- document.getElementById("aExp").innerHTML=q.exp;
- document.getElementById("aPoint").textContent="🎯 考点："+q.plate;
+ document.getElementById("aPlate").textContent=q.plate;
+ document.getElementById("aPlate").style.background=q.color;
+ document.getElementById("aIdx").textContent=`第 ${cur+1} / ${order.length} 关`;
+ stopSpeak();
+ const vb=document.getElementById("vidBox");vb.style.display="none";vb.innerHTML="";vb.dataset.src="";
+ const nb=document.getElementById("ansNextBtn");
+ const vo=document.getElementById("vidOpt");
+ const hint=document.getElementById("vidHint");
+ const im=document.getElementById("aImg");
+ const wrongAns=ansMap[cur]!==undefined&&ansMap[cur]!==q.ans;
  show(["ans"]);
+ nb.disabled=false;nb.style.opacity="1";nb.textContent="下一题 →";
+ if(wrongAns&&q.vid){
+   im.style.display="none";
+   if(vo)vo.style.display="none";
+   if(hint)hint.textContent="👀 看完讲解视频才能进入下一题哦";
+   nb.disabled=true;nb.style.opacity=".45";nb.textContent="看完视频才能进入下一题 👀";
+   playVid();
+   const vd=vb.querySelector("video");
+   const unlock=()=>{videoDone.add(order[cur]);nb.disabled=false;nb.style.opacity="1";nb.textContent="下一题 →";
+     if(hint)hint.textContent="✅ 讲解看完啦，记住这个知识点！"};
+   if(vd){vd.muted=false;vd.onended=unlock;
+     vd.onerror=()=>{videoDone.add(order[cur]);nb.disabled=false;nb.style.opacity="1";nb.textContent="下一题 →";
+       if(hint)hint.textContent="⚠️ 视频加载失败，先继续做下一题吧～"};}
+   else unlock();
+ }else if(!q.vid){
+   if(vo)vo.style.display="none";
+   if(im&&q.a){im.src=q.a;im.style.display="block"}
+   if(hint)hint.textContent="📖 图文解析";
+ }else{
+   im.style.display="none";
+   if(vo){vo.style.display="block";
+     const vb2=document.getElementById("vidBtn");
+     if(vb2)vb2.textContent="🎬 看这题的讲解视频";}
+   if(hint)hint.textContent="";
+ }
 }
 function next(){
- cur++;
+ stopSpeak();
+ if(ansMap[cur]!==undefined&&ansMap[cur]!==QUIZ[order[cur]].ans&&QUIZ[order[cur]].vid&&!videoDone.has(order[cur])){
+   showAns();return;
+ }
+ const vb=document.getElementById("vidBox");vb.style.display="none";vb.innerHTML="";vb.dataset.src="";
+ cur++;cur++;
  if(cur>=order.length){result();return}
  if(document.getElementById("quiz").classList.contains("hidden"))show(["quiz"]);
  render();
@@ -329,5 +369,38 @@ function renderProg(){
    <div style="flex:1;min-width:150px">🔁 错题本：<b style="color:#e05252">${w}</b> 题</div>
    <div style="flex:1;min-width:150px">✅ 已掌握：<b style="color:#3cb371">${total-w}</b> 题</div></div>`;
 }
+
+// ---------- 读题(TTS) ----------
+let voices=[];
+function loadVoices(){voices=speechSynthesis.getVoices()}
+if(typeof speechSynthesis!=="undefined"){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+function stopSpeak(){if(typeof speechSynthesis!=="undefined")speechSynthesis.cancel();
+ const b=document.getElementById("readBtn");if(b)b.classList.remove("reading")}
+function readQ(){
+ const q=QUIZ[order[cur]];
+ if(!q.read)return;
+ const b=document.getElementById("readBtn");
+ if(b.classList.contains("reading")){stopSpeak();return}
+ speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance("第"+(cur+1)+"题。"+q.read);
+ u.lang="zh-CN";u.rate=0.9;u.pitch=1.1;
+ const v=voices.find(v=>(v.lang||"").toLowerCase().indexOf("zh")===0);
+ if(v)u.voice=v;
+ u.onend=()=>b.classList.remove("reading");
+ b.classList.add("reading");
+ speechSynthesis.speak(u);
+}
+// ---------- 讲解视频 ----------
+let videoDone=new Set();
+function playVid(){
+ const q=QUIZ[order[cur]];
+ stopSpeak();
+ const box=document.getElementById("vidBox");
+ if(box.style.display==="block"&&box.dataset.src===q.vid){box.style.display="none";return}
+ box.dataset.src=q.vid;box.style.display="block";
+ box.innerHTML=`<video controls playsinline autoplay style="width:100%;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,.15)" src="${q.vid}"></video>`;
+ try{box.scrollIntoView({behavior:"smooth",block:"center"})}catch(e){}
+}
+
 renderProg();renderName();
 </script></body></html>
