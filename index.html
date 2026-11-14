@@ -295,12 +295,14 @@ function addCoins(n,anchor){
  if(anchor){const f=document.createElement("div");f.className="coinfly";f.textContent="+"+n+" 🪙";
   anchor.appendChild(f);setTimeout(()=>f.remove(),1200)}
 }
+// sound files live in the 初级组 site (same origin)
+const SFX={"coin":"https://zhuqiannan101.github.io/turing-quiz-chuji/sfx/coin.mp3","double":"https://zhuqiannan101.github.io/turing-quiz-chuji/sfx/double.mp3","triple":"https://zhuqiannan101.github.io/turing-quiz-chuji/sfx/triple.mp3","quadra":"https://zhuqiannan101.github.io/turing-quiz-chuji/sfx/quadra.mp3","penta":"https://zhuqiannan101.github.io/turing-quiz-chuji/sfx/penta.mp3","legendary":"https://zhuqiannan101.github.io/turing-quiz-chuji/sfx/legendary.mp3","welcome":"https://zhuqiannan101.github.io/turing-quiz-chuji/sfx/welcome.mp3","fail":"https://zhuqiannan101.github.io/turing-quiz-chuji/sfx/fail.mp3"};
 let actx=null,sfxBuf={};
 function ac(){if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}
  if(actx&&actx.state==="suspended")try{actx.resume()}catch(e){}
  return actx}
 function playSfx(name){
- const c=ac();if(!c||!snd)return;
+ const c=ac();if(!c||!snd||!SFX[name])return;
  if(sfxBuf[name]){const s=c.createBufferSource();s.buffer=sfxBuf[name];s.connect(c.destination);s.start();return}
  fetch(SFX[name]).then(r=>r.arrayBuffer()).then(ab=>c.decodeAudioData(ab)).then(buf=>{sfxBuf[name]=buf;
   const s=c.createBufferSource();s.buffer=buf;s.connect(c.destination);s.start()}).catch(e=>{})
